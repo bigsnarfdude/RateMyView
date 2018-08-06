@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" integrity="sha384-WskhaSGFgHYWDcbwN70/dfYBj47jz9qbsMId/iRN3ewGhXQFZCSftd1LZCfmhktB" crossorigin="anonymous">
+
+    <title>Banff Gondola - Rate My View</title>
+  </head>
+  <body style="">
+
+            <div class="row">
+              <div class="col col-lg-8 offset-lg-2">
+                <h1 style="text-align: center">Banff Gondola - Rate My View</h1>
+                {% if score %}
+                    <h3 style="text-align: center">I'd rate this view as:  {{ score }}</h3>
+                {% else %}
+                    <h3 style="text-align: center">I couldn't choose a rating.</h3>
+                {% endif %}
+              </div>
+            </div>
+            <div class="row">
+              <div class="col col-lg-8 offset-lg-2">
+                <img src="http://www.banffjaspercollection.com/BrewsterCMS/Handlers/Webcam-Photos.ashx?photo=wctown2" alt="Gondola Webcam"  height="auto" width="100%" />
+              </div>
+            </div>
+            <div class="row" style="padding-top: 20px">
+              <div class="col col-sm-2 offset-sm-5">
+                <div class="input-group mb-1">
+                  <input id="name-input" type="number" class="form-control" name="quantity" min="1" max="5" aria-label="The Rating from 1-5" aria-describedby="basic-addon2">
+                  <div class="input-group-append">
+                    <button id="name-button" class="btn btn-outline-secondary" type="button">Submit</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <p id="name" style="text-align: center"></p>
+            </div>
+            <div class="row" style="padding-top: 30px">
+              <div class="col col-sm-3 offset-sm-5"><h3>Rating Scale from 1 to 5</h3></div>
+            </div>
+            <div class="row" style="padding-top: 15px">
+              <div class="col col-sm-2 offset-sm-3">
+                <h6 style="height: 35px">Cant see anything - 1</h6>
+                <img src="static/cantSeeAnything.jpg" alt="1 - Can't See Anything" style="width:100%">
+              </div>
+              <div class="col col-sm-2">
+                <h6 style="height: 35px">Cloudy, still see Banff - 3</h6>
+                <img src="static/cloudyButICanSeeBanff.jpg" alt="3 - Cloudy but I can see Banff" style="width:100%">
+              </div>
+              <div class="col col-sm-2">
+                <h6 style="height: 35px">Perfect Blue Sky View - 5</h6>
+                <img src="static/perfectBlueSkyDay.jpg" alt="5 - Perfect Blue Sky Day" style="width:100%">
+              </div>
+            </div>
+            <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+            <script>
+            $("#name-button").click(function(event){
+                let message = {
+                    name: $("#name-input").val()
+                }
+                $.post("http://10.9.2.112:5000/hello/vincent", JSON.stringify(message), function(response){
+                    $("#name").text(response.greeting);
+                    console.log(response);
+                });
+            });
+            </script>
+
+
+
+  </body>
+</html>
