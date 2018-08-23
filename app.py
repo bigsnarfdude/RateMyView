@@ -30,12 +30,14 @@ from keras.preprocessing import image
 # Flask utils
 from flask import Flask, redirect, url_for, request, render_template
 from werkzeug.utils import secure_filename
-from gevent.wsgi import WSGIServer
+from gevent.pywsgi import WSGIServer
+from sqlitedict import SqliteDict
 
 global GRAPH
 target = "https://www.banffjaspercollection.com/BrewsterCMS/Handlers/Webcam-Photos.ashx?photo=wctown2"
-model_file = r"C:\Users\vohprecio\Desktop\RateMyView\models\retrained_graph_5000.pb"
-label_file = r"C:\Users\vohprecio\Desktop\RateMyView\models\retrained_labels.txt"
+model_file = r"/Users/antigen/dev/RateMyView/models/retrained_graph_5000.pb"
+label_file = r"/Users/antigen/dev/RateMyView/models/retrained_labels.txt"
+sql_dict_store = r"/Users/antigen/dev/RateMyView/storage/rateMyView_db.sqlite"
 input_height = 299
 input_width = 299
 input_mean = 0
@@ -43,6 +45,7 @@ input_std = 255
 input_layer = "Mul"
 output_layer = "final_result"
 
+from time import sleep
 
 # Define a flask app
 app = Flask(__name__)
@@ -141,42 +144,58 @@ def index():
             label.append(l.rstrip())
         return label
 
-    resource = urllib.request.urlopen(target)
-    filename = gen_filename()
-    file_name = r'C:\Users\vohprecio\Desktop\RateMyView\uploads' + '\\' + filename
-    output = open(file_name,"wb")
-    output.write(resource.read())
-    output.close()
-    GRAPH = load_graph(model_file)
-    print()
-    t = read_tensor_from_image_file(file_name,
-                                      input_height=input_height,
-                                      input_width=input_width,
-                                      input_mean=input_mean,
-                                      input_std=input_std)
-   
-    logging.debug("############ Reading File ##################")
-    input_name = "import/" + input_layer
-    output_name = "import/" + output_layer
-    input_operation = GRAPH.get_operation_by_name(input_name)
-    output_operation = GRAPH.get_operation_by_name(output_name)
+    while True:
 
-    with tf.Session(graph=GRAPH) as sess:
-        start = time.time()
-        results = sess.run(output_operation.outputs[0],
-                          {input_operation.outputs[0]: t})
-        end=time.time()
-    results = np.squeeze(results)
+        import datetime
+        now = datetime.datetime.now()
 
-    top_k = results.argsort()[-5:][::-1]
-    labels = load_labels(label_file)
+        if now.hour in [22,23,24,0,1,2,3,4,5,6,7]:
+            pass
+        else:
+            resource = urllib.request.urlopen(target)
+            filename = gen_filename()
+            file_name = r'/Users/antigen/dev/RateMyView/uploads' + '/' + filename
+            output = open(file_name,"wb")
+            output.write(resource.read())
+            output.close()
+            GRAPH = load_graph(model_file)
+            t = read_tensor_from_image_file(file_name,
+                              input_height=input_height,
+                              input_width=input_width,
+                              input_mean=input_mean,
+                              input_std=input_std)
+           
+            logging.debug("############ Reading File ##################")
+            input_name = "import/" + input_layer
+            output_name = "import/" + output_layer
+            input_operation = GRAPH.get_operation_by_name(input_name)
+            output_operation = GRAPH.get_operation_by_name(output_name)
 
-    logging.debug(top_k[0])
-    score = str(top_k[0] + 1)
-    response = score + get_fortune(compliments, moar)
+            with tf.Session(graph=GRAPH) as sess:
+                start = time.time()
+                results = sess.run(output_operation.outputs[0],
+                      {input_operation.outputs[0]: t})
+                end=time.time()
+                results = np.squeeze(results)
+
+            top_k = results.argsort()[-5:][::-1]
+            labels = load_labels(label_file)
+            mydict = SqliteDict(sql_dict_store, autocommit=True)
+            mydict[filename] = top_k[0]+1
+
+            for key, value in mydict.iteritems():
+                logging.debug((key, str(value)))
+                mydict.close()
+                logging.debug(top_k[0]+1)
+                score = str(top_k[0]+1)
+                response = score + get_fortune(compliments, moar)
+    
+        time.sleep(30*60)    
+
     return render_template('view.html', score=response)
 
-
+        
+        
 @app.route('/hello/<name>', methods=['GET', 'POST'])
 def hello(name):
      return 'Hello {}'.format(name)
